@@ -2,10 +2,20 @@
 <?php
 /* vim: set expandtab ts=4 sts=4 sw=4 tw=0: */
 
+$pcount = 1;
+$loop = 1;
 
-$pcount = 300;
-$loop =   211500000/ $pcount;
-//$loop = 7050000/ $pcount;
+switch($argc)
+{
+  case 1:
+  case 2:
+    echo "rb.php <fork count> <key count>\n";
+    exit;
+  default:
+    $pcount = $argv[1];
+    $loop = $argv[2];
+    break;
+}
 
 class RedisBench {
     private $redis01;
@@ -111,6 +121,7 @@ class RedisBench {
 
 date_default_timezone_set('Asia/Tokyo');
 ini_set('memory_limit', '2G');
+
 
 $pstack = array();
 for($i=1;$i<=$pcount;$i++){
