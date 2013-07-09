@@ -9,29 +9,24 @@ switch($argc)
 {
   case 1:
   case 2:
-    echo "rb.php <fork count> <key count>\n";
+  case 3:
+    echo "rb.php <server> <fork count> <key count>\n";
     exit;
   default:
-    $pcount = $argv[1];
-    $loop = $argv[2];
+    $server = $argv[1];
+    $pcount = $argv[2];
+    $loop = $argv[3];
     break;
 }
 
 class RedisBench {
     private $redis01;
-    private $redis02;
-    private $redis03;
 
     private $scenarios;
     private $pid;
     function __construct() {
         $this->redis01 = new Redis();
-        $this->redis02 = new Redis();
-        $this->redis03 = new Redis();
-        //$this->redis01->pconnect('/tmp/redis.sock');
-        $this->redis01->pconnect('CMN_REDIS01');
-        $this->redis02->pconnect('CMN_REDIS02');
-        $this->redis03->pconnect('CMN_REDIS03');
+        $this->redis01->pconnect($server);
         $this->pid = getmypid();
 
         $redis = $this->redis01;
@@ -58,7 +53,6 @@ class RedisBench {
             "normal set" => function () use (&$redis, $pid) {
                 $lastkey = "endtime".$pid;
                 for($i = 1; $i<=$loop;$i++){
-                    //$redis01->set("hoge".$i,date("Y-m-d H:i:s").substr(microtime(),1,5));
                     $redis->set("hoge".$pid.$i,$i);
                 }
                 $redis->set($lastkey,date("Y-m-d H:i:s").substr(microtime(),1,5));
@@ -77,38 +71,11 @@ class RedisBench {
             $time = $end-$start;
             echo $this->pid." time:{$time}秒\n";
             $lastvalue = $this->redis01->get($lastkey);
-            echo $this->pid . " get lastkey.... redis-cli -h CMN_REDIS01 get $lastkey -> ".$lastvalue. "\n";
+            echo $this->pid . " get lastkey.... redis-cli -h $server get $lastkey -> ".$lastvalue. "\n";
             if(empty($lastvalue)){
                 echo  $this->pid ." 最後の値($lastkey)が記録できていないので終了します\n";
                 exit (1);
             }
-            echo  $this->pid ." polling........ redis-cli -h CMN_REDIS02 get $lastkey\n";
-            echo  $this->pid ." polling........ redis-cli -h CMN_REDIS03 get $lastkey\n";
-            $lag02 = 0;
-            $lag03 = 0;
-            while(true){
-                if($lag02===0){
-                    if($lastvalue === $this->redis02->get($lastkey)){
-                        $redis02end = microtime(true);
-                        $lag02 = $redis02end - $end;
-                        echo $this->pid ." get lastkey........ redis-cli -h CMN_REDIS02 get $lastkey -> $lastvalue\n";
-                        echo $this->pid." CMN_REDIS02 lag:{$lag02}秒\n";
-                    }
-                }
-                if($lag03===0){
-                    if($lastvalue === $this->redis03->get($lastkey)){
-                        $redis03end = microtime(true);
-                        $lag03 = $redis03end - $end;
-                        echo $this->pid ." get lastkey........ redis-cli -h CMN_REDIS03 get $lastkey -> $lastvalue\n";
-                        echo $this->pid." CMN_REDIS03 lag:{$lag03}秒\n";
-                    }
-                }
-                if(($lag02 !== 0)&&($lag03 !== 0)){
-                    break;
-                }
-                usleep(10);
-            }
-            break; // とりあえず最初のシナリオで終わる
         }
     }
 
