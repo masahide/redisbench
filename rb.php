@@ -1,4 +1,4 @@
-#!/usr/local/bin/php
+#!/usr/bin/php
 <?php
 /* vim: set expandtab ts=4 sts=4 sw=4 tw=0: */
 
@@ -40,7 +40,7 @@ class RedisBench {
                 $pipe->set($lastkey,date("Y-m-d H:i:s").substr(microtime(),1,5));
                 $start = microtime(true);
                 $pipe->exec();
-                echo "$pid rap2:".(microtime(true) - $start)."\n";
+                //echo "$pid rap2:".(microtime(true) - $start)."\n";
                 return $lastkey;
             } ,
         );
@@ -48,17 +48,18 @@ class RedisBench {
     }
 
     private function bm($funcs){
+        $hostname =gethostname();
         foreach($funcs as $fn_name => $fn){
             //echo $this->pid."-- run $fn_name -- ",$this->loop,"件のset\n";
             $start = microtime(true);
             $lastkey = $fn();
             $end = microtime(true);
             $time = $end-$start;
-            echo $this->pid." time:{$time}秒\n";
+            echo "$hostname ,",$this->pid.", {$time}\n";
             $lastvalue = $this->redis01->get($lastkey);
             //echo $this->pid . " get lastkey.... redis-cli -h $this->server get $lastkey -> ".$lastvalue. "\n";
             if(empty($lastvalue)){
-                echo  $this->pid ." 最後の値($lastkey)が記録できていないので終了します\n";
+                echo  "$hostname ,".$this->pid .", 最後の値($lastkey)が記録できていないので終了します\n";
                 exit (1);
             }
             break; //とりあえず1個目で終了
@@ -104,7 +105,7 @@ for($i=1;$i<=$pcount;$i++){
     } else {
         $rb = new RedisBench($server,$pcount,$loop);
         $rb->main();
-        echo "Complete No$i\n";
+        //echo "Complete No$i\n";
         exit(); //処理が終わったらexitする。
     }
 }
