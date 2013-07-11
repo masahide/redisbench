@@ -55,7 +55,8 @@ class RedisBench {
             $lastkey = $fn();
             $end = microtime(true);
             $time = $end-$start;
-            echo "$hostname ,",$this->pid.", {$time}\n";
+            $la = sys_getloadavg();
+            echo "$hostname ,",$this->pid.", {$time}, $la[0], $la[1], $la[2]\n";
             $lastvalue = $this->redis01->get($lastkey);
             //echo $this->pid . " get lastkey.... redis-cli -h $this->server get $lastkey -> ".$lastvalue. "\n";
             if(empty($lastvalue)){
