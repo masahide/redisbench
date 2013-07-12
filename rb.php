@@ -24,7 +24,7 @@ class RedisBench {
             "normal set" => function () use (&$redis, $pid, $loop) {
                 $lastkey = "endtime".$pid;
                 for($i = 1; $i<=$loop;$i++){
-                    $redis->set("hoge".$pid.$i,$i);
+                    $redis->set("hoge".$pid.$i,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbb");
                 }
                 $redis->set($lastkey,date("Y-m-d H:i:s").substr(microtime(),1,5));
                 return $lastkey;
