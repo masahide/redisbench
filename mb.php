@@ -9,22 +9,24 @@ class MemcacheBench {
     private $loop;
     private $pid;
     private $server;
-    function __construct($server,$pcount,$loop) {
+    private $value;
+    function __construct($server,$pcount,$loop,$value) {
         $this->memcache01 = new Memcache();
         $this->memcache01->pconnect($server);
         $this->pid = getmypid();
         $this->loop = $loop;
         $this->server = $server;
+        $this->value = $value;
 
         $memcache = $this->memcache01;
         $pid = $this->pid;
 
         $this->scenarios = array(
             //単純実行
-            "normal set" => function () use (&$memcache, $pid, $loop) {
+            "normal set" => function () use (&$memcache, $pid, $loop, $value) {
                 $lastkey = "endtime".$pid;
                 for($i = 1; $i<=$loop;$i++){
-                    $memcache->set("hoge".$pid.$i,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbb");
+                    $memcache->set("hoge".$pid.$i,$value);
                 }
                 $memcache->set($lastkey,date("Y-m-d H:i:s").substr(microtime(),1,5));
                 return $lastkey;
@@ -69,18 +71,26 @@ switch($argc)
   case 1:
   case 2:
   case 3:
-    echo "rb.php <server> <fork count> <key count> [client_number]\n";
-    exit;
   case 4:
+    echo "rb.php <size> <server> <fork count> <key count> [client_number]\n";
+    exit;
+  case 5:
     $num = null;
     break;
   default:
-    $num = $argv[4]+1;
+    $num = $argv[5]+1;
     break;
 }
-$server = $argv[1];
-$pcount = $argv[2];
-$loop = $argv[3];
+$server = $argv[2];
+$pcount = $argv[3];
+$loop = $argv[4];
+$size = $argv[1];
+
+if(!is_numeric($size)){
+    echo "第一引数は書き込むvalueのサイズを数値で指定してください\n";
+    exit;
+}
+$value = str_repeat('a',$size);
 
 if($num !== null){
     $servers = explode(',',$server);
@@ -100,7 +110,7 @@ for($i=1;$i<=$pcount;$i++){
             unset( $pstack[ pcntl_waitpid( -1, $status, WUNTRACED ) ] );
         }
     } else {
-        $rb = new MemcacheBench($server,$pcount,$loop);
+        $rb = new MemcacheBench($server,$pcount,$loop,$value);
         $rb->main();
         //echo "Complete No$i\n";
         exit(); //処理が終わったらexitする。

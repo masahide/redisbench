@@ -9,33 +9,35 @@ class RedisBench {
     private $loop;
     private $pid;
     private $server;
-    function __construct($server,$pcount,$loop) {
+    private $value;
+    function __construct($server,$pcount,$loop,$value) {
         $this->redis01 = new Redis();
         $this->redis01->pconnect($server);
         $this->pid = getmypid();
         $this->loop = $loop;
         $this->server = $server;
+        $this->value = $value;
 
         $redis = $this->redis01;
         $pid = $this->pid;
 
         $this->scenarios = array(
             //単純実行
-            "normal set" => function () use (&$redis, $pid, $loop) {
+            "normal set" => function () use (&$redis, $pid, $loop, $value) {
                 $lastkey = "endtime".$pid;
                 for($i = 1; $i<=$loop;$i++){
-                    $redis->set("hoge".$pid.$i,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbb");
+                    $redis->set("hoge".$pid.$i,$value);
                 }
                 $redis->set($lastkey,date("Y-m-d H:i:s").substr(microtime(),1,5));
                 return $lastkey;
             } ,
 
             //パイプライン
-            "pipe line" => function () use (&$redis,$pid, $loop) {
+            "pipe line" => function () use (&$redis,$pid, $value) {
                 $lastkey = "endtime".$pid;
                 $pipe = $redis->multi(Redis::PIPELINE);
                 for($i = 1; $i<$loop;$i++){
-                    $pipe->set("hoge".$pid.$i,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbb");
+                    $pipe->set("hoge".$pid.$i,$value);
                 }
                 $pipe->set($lastkey,date("Y-m-d H:i:s").substr(microtime(),1,5));
                 $start = microtime(true);
@@ -80,18 +82,26 @@ switch($argc)
   case 1:
   case 2:
   case 3:
-    echo "rb.php <server> <fork count> <key count> [client_number]\n";
-    exit;
   case 4:
+    echo "rb.php <size> <server> <fork count> <key count> [client_number]\n";
+    exit;
+  case 5:
     $num = null;
     break;
   default:
-    $num = $argv[4]+1;
+    $num = $argv[5]+1;
     break;
 }
-$server = $argv[1];
-$pcount = $argv[2];
-$loop = $argv[3];
+$server = $argv[2];
+$pcount = $argv[3];
+$loop = $argv[4];
+$size = $argv[1];
+
+if(!is_numeric($size)){
+    echo "第一引数は書き込むvalueのサイズを数値で指定してください\n";
+    exit;
+}
+$value = str_repeat('a',$size);
 
 if($num !== null){
     $servers = explode(',',$server);
@@ -111,7 +121,7 @@ for($i=1;$i<=$pcount;$i++){
             unset( $pstack[ pcntl_waitpid( -1, $status, WUNTRACED ) ] );
         }
     } else {
-        $rb = new RedisBench($server,$pcount,$loop);
+        $rb = new RedisBench($server,$pcount,$loop,$value);
         $rb->main();
         //echo "Complete No$i\n";
         exit(); //処理が終わったらexitする。
