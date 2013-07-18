@@ -18,15 +18,17 @@ class MysqlBench {
         $this->server = $server;
         $this->value = $value;
         $this->table = $table;
+        $rand = rand(0,99999);
+        $this->rand = $rand;
 
         $pid = $this->pid;
 
         $this->scenarios = array(
             //単純実行
-            "normal set" => function () use ($pid, $loop, $value, $table) {
-                $lastkey = "endtime".$pid;
+            "normal set" => function () use ($pid, $rand, $loop, $value, $table) {
+                $lastkey = "endtime".$pid.$rand;
                 for($i = 1; $i<=$loop;$i++){
-                   mysql_query("insert into $table values ('.$pid.$i.','$value')");
+                   mysql_query("insert into $table values ('.$pid.$rand.$i.','$value')");
                 }
                 mysql_query("insert into $table values ('$lastkey', '".date("Y-m-d H:i:s").substr(microtime(),1,5)."')");
                 return $lastkey;
