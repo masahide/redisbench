@@ -43,7 +43,7 @@ class MemcacheBench {
             $end = microtime(true);
             $time = $end-$start;
             $la = sys_getloadavg();
-            echo "$hostname ,",$this->pid.", {$time}, $la[0], $la[1], $la[2]\n";
+            echo "$hostname ,",$this->pid.", {$time}, $la[0], $la[1], $la[2], {$this->server}\n";
             $lastvalue = $this->memcache01->get($lastkey);
             //echo $this->pid . " get lastkey.... memcache-cli -h $this->server get $lastkey -> ".$lastvalue. "\n";
             if(empty($lastvalue)){
@@ -69,13 +69,22 @@ switch($argc)
   case 1:
   case 2:
   case 3:
-    echo "rb.php <server> <fork count> <key count>\n";
+    echo "rb.php <server> <fork count> <key count> [client_number]\n";
     exit;
-  default:
-    $server = $argv[1];
-    $pcount = $argv[2];
-    $loop = $argv[3];
+  case 4:
+    $num = null;
     break;
+  default:
+    $num = $argv[4]+1;
+    break;
+}
+$server = $argv[1];
+$pcount = $argv[2];
+$loop = $argv[3];
+
+if($num !== null){
+    $servers = explode(',',$server);
+    $server = $servers[$num % count($servers)];
 }
 
 
