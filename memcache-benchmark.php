@@ -2,10 +2,10 @@
 /* vim: set expandtab ts=4 sts=4 sw=4 tw=0: */
 
 $default_param = array(
-    "class"          => "Memcache",  // Memcache or Redis
-    "connect_method" => "connect",   // Memcache:connect,pconnect,addServer  Redis:connect,pconnect
+    "class"          => "Mysql",  // Memcache,Redis,Mysql
+    "connect_method" => "connect",   // connect,pconnect,addServer
     "server"         => "localhost", // 接続サーバー localhost:11211 等のポート番号をつけることもできる
-    "loop"           => 1,           // 繰り返し回数
+    "loop"           => 100,         // 繰り返し回数
     "size"           => 8,           // 書き込みサイズ(byte)
     "close"          => "false",     // closeメソッドを呼ぶかどうか
     "pretty"         => "false",     // 結果をpretty print
@@ -17,14 +17,15 @@ $cache->{$param->connect_method}($param->server);
 
 $hostname = gethostname();
 $pid = getmypid();
+$key = uniqid($pid);
 $value = str_repeat('a',$param->size);
 
 $start = microtime(true);
 for($i = 1; $i<=$param->loop; $i++){
-    $cache->set("hoge".$pid.$i,$value);
+    $cache->set("{$key}-{$i}",$value);
 }
 for($i = 1; $i<=$param->loop; $i++){
-    if($cache->get("hoge".$pid.$i) !== $value){
+    if($cache->get("{$key}-{$i}") !== $value){
         echo  "$hostname ,".$pid .", setした値が記録できていないので終了します\n";
         exit;
     }
@@ -48,4 +49,36 @@ echo json_encode(
      PHP_EOL;
 
 
+
+class Mysql {
+    private $db = "test";
+    private $user = "bmg";
+    private $pass = "hoge";
+    private $table = "test_innodb256";
+    
+    public function connect($server){
+        mysql_connect($server,$this->user,$this->pass);
+        mysql_select_db($this->db);
+    }
+    public function pconnect(){
+        mysql_pconnect($server,$this->user,$this->pass);
+        mysql_select_db($this->db);
+    }
+    public function close(){
+        mysql_close();
+    }
+    public function set($key,$value){
+        mysql_query("insert into {$this->table} values ('$key','$value')");
+    }
+    public function get($key){
+        $result = mysql_query("select value from {$this->table} where `key`='$key'");
+        if(!$result){
+            return NULL;
+        }
+        else{
+            $row = (object) mysql_fetch_assoc($result);
+            return property_exists($row,'value')? $row->value : NULL;
+        }
+    }
+}
 
