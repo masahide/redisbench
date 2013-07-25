@@ -2,7 +2,7 @@
 /* vim: set expandtab ts=4 sts=4 sw=4 tw=0: */
 
 $default_param = array(
-    "class"          => "Mysql",  // Memcache,Redis,Mysql
+    "class"          => "Memcache",  // Memcache,Redis,Mysql
     "connect_method" => "connect",   // connect,pconnect,addServer
     "server"         => "localhost", // 接続サーバー localhost:11211 等のポート番号をつけることもできる
     "loop"           => 100,         // 繰り返し回数
