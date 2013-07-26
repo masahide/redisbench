@@ -2,8 +2,8 @@
 /* vim: set expandtab ts=4 sts=4 sw=4 tw=0: */
 
 $default_param = array(
-    "class"          => "Memcache",  // Memcache,Redis,Mysql
-    "connect_method" => "connect",   // connect,pconnect,addServer
+    "class"          => "Memcache",  // Memcache,MemcacheEx,Redis,Mysql
+    "connect_method" => "addServer", // connect,pconnect,addServer,nonPaddServer
     "server"         => "localhost", // 接続サーバー localhost:11211 等のポート番号をつけることもできる
     "loop"           => 100,         // 繰り返し回数
     "size"           => 8,           // 書き込みサイズ(byte)
@@ -31,8 +31,7 @@ for($i = 1; $i<=$param->loop; $i++){
     }
 }
 if(strcasecmp($param->close,"true")===0){
-    $cache->close();
-}
+    $cache->close(); }
 $end = microtime(true);
 
 $result = array(
@@ -48,6 +47,13 @@ echo json_encode(
      ), 
      PHP_EOL;
 
+class MemcacheEx extends Memcache {
+    public function nonPaddServer($server){
+        $s = explode(":",$server);
+        $port = array_key_exists(2,$s)? $s[2]: 11211; 
+        return $this->addServer($server,$port,FALSE);
+    }
+}
 
 
 class Mysql {
