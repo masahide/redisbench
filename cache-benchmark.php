@@ -13,7 +13,10 @@ $default_param = array(
 $param = (object) array_merge($default_param, $_GET);
 
 $cache = new $param->class();
-$cache->{$param->connect_method}($param->server);
+if($cache->{$param->connect_method}($param->server) === false){
+        header('HTTP', true, 500); exit;
+}
+
 
 $hostname = gethostname();
 $pid = getmypid();
@@ -22,16 +25,21 @@ $value = str_repeat('a',$param->size);
 
 $start = microtime(true);
 for($i = 1; $i<=$param->loop; $i++){
-    $cache->set("{$key}-{$i}",$value);
+    if($cache->set("{$key}-{$i}",$value) === false){
+        header('HTTP', true, 501); exit;
+    }
 }
 for($i = 1; $i<=$param->loop; $i++){
     if($cache->get("{$key}-{$i}") !== $value){
-        echo  "$hostname ,".$pid .", setした値が記録できていないので終了します\n";
-        exit;
+        //echo  "$hostname ,".$pid .", setした値が記録できていないので終了します\n";
+        header('HTTP', true, 502); exit;
     }
 }
 if(strcasecmp($param->close,"true")===0){
-    $cache->close(); }
+    if($cache->close() === false){
+        header('HTTP', true, 503); exit;
+    }
+}
 $end = microtime(true);
 
 $result = array(
@@ -63,23 +71,29 @@ class Mysql {
     private $table = "test_innodb256";
     
     public function connect($server){
-        mysql_connect($server,$this->user,$this->pass);
-        mysql_select_db($this->db);
+        if( (mysql_connect($server,$this->user,$this->pass) === false) ||
+            (mysql_select_db($this->db) === false)
+          ){
+            return false;
+        }
     }
     public function pconnect(){
-        mysql_pconnect($server,$this->user,$this->pass);
-        mysql_select_db($this->db);
+        if( (mysql_pconnect($server,$this->user,$this->pass) === false) ||
+            (mysql_select_db($this->db) === false)
+          ){
+            return false;
+        }
     }
     public function close(){
-        mysql_close();
+        return mysql_close();
     }
     public function set($key,$value){
-        mysql_query("insert into {$this->table} values ('$key','$value')");
+        return mysql_query("insert into {$this->table} values ('$key','$value')");
     }
     public function get($key){
         $result = mysql_query("select value from {$this->table} where `key`='$key'");
         if(!$result){
-            return NULL;
+            return $result;
         }
         else{
             $row = (object) mysql_fetch_assoc($result);
