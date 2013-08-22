@@ -20,7 +20,7 @@ if($cache->{$param->connect_method}($param->server) === false){
 
 $hostname = gethostname();
 $pid = getmypid();
-$key = uniqid($pid);
+$key = uniqid($hostname . $pid);
 $value = str_repeat('a',$param->size);
 
 $start = microtime(true);
