@@ -44,9 +44,9 @@ $end = microtime(true);
 
 $result = array(
     "hostname"  => $hostname,
-    "pid"       => $pid,
-    "time"      => $end-$start,
-    "la"        => implode(",",sys_getloadavg()),
+    "pid"       => sprintf('%011d', $pid),
+    "time"      => sprintf('%.17f', $end-$start),
+    "la"        => implode(",", array_map('to_f', sys_getloadavg())),
 );
 
 echo json_encode( 
@@ -54,6 +54,11 @@ echo json_encode(
         (strcasecmp($param->pretty,"true")===0)? JSON_PRETTY_PRINT:0
      ), 
      PHP_EOL;
+
+function to_f($val)
+{
+    return sprintf('%.2f', $val);
+}
 
 class MemcacheEx extends Memcache {
     public function nonPaddServer($server){
