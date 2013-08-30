@@ -28,12 +28,14 @@ for($i = 1; $i<=$param->loop; $i++){
     if($cache->set("{$key}-{$i}",$value) === false){
         header('HTTP', true, 501); exit;
     }
+    usleep(10);
 }
 for($i = 1; $i<=$param->loop; $i++){
     if($cache->get("{$key}-{$i}") !== $value){
         //echo  "$hostname ,".$pid .", setした値が記録できていないので終了します\n";
         header('HTTP', true, 502); exit;
     }
+    usleep(10);
 }
 if(strcasecmp($param->close,"true")===0){
     if($cache->close() === false){
