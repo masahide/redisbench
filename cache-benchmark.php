@@ -9,6 +9,7 @@ $default_param = array(
     "size"           => 8,           // 書き込みサイズ(byte)
     "close"          => "false",     // closeメソッドを呼ぶかどうか
     "pretty"         => "false",     // 結果をpretty print
+    "usleep"         => 0,           // usleep(マイクロ秒)
 );
 $param = (object) array_merge($default_param, $_GET);
 
@@ -28,12 +29,14 @@ for($i = 1; $i<=$param->loop; $i++){
     if($cache->set("{$key}-{$i}",$value) === false){
         header('HTTP', true, 501); exit;
     }
+    if($param->usleep) usleep($param->usleep);
 }
 for($i = 1; $i<=$param->loop; $i++){
     if($cache->get("{$key}-{$i}") !== $value){
         //echo  "$hostname ,".$pid .", setした値が記録できていないので終了します\n";
         header('HTTP', true, 502); exit;
     }
+    if($param->usleep) usleep($param->usleep);
 }
 if(strcasecmp($param->close,"true")===0){
     if($cache->close() === false){
